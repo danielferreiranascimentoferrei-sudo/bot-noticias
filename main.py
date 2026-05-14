@@ -407,11 +407,30 @@ carregar_enviadas()
 
 avisar_todos("✅ BOT FUNCIONANDO")
 
-schedule.every(TEMPO_VERIFICACAO).seconds.do(verificar_noticias)
-schedule.every(5).seconds.do(verificar_comandos)
+schedule.every(TEMPO_VERIFICACAO).seconds.do(
+    verificar_noticias
+)
+
+schedule.every(5).seconds.do(
+    verificar_comandos
+)
 
 print("BOT INICIADO")
 
+# =========================================
+# ESPERA PRIMEIRO CICLO
+# =========================================
+
+print(
+    f"Aguardando "
+    f"{TEMPO_VERIFICACAO}s "
+    f"para iniciar verificações..."
+)
+
+time.sleep(TEMPO_VERIFICACAO)
+
 while True:
+
     schedule.run_pending()
+
     time.sleep(0.5)
