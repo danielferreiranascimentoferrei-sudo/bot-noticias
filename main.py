@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-TOKEN = "SEU_TOKEN_AQUI"
+TOKEN = "8970558916:AAHqPrQ84zE-C_w7Ih_DfF_BWbuXfh2FdCM"
 
 URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
 
