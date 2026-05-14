@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 
 # =========================================
-# CONFIGURAÇÕES PRINCIPAIS
+# CONFIGURAÇÕES
 # =========================================
 
 TOKEN = "8970558916:AAHqPrQ84zE-C_w7Ih_DfF_BWbuXfh2FdCM"
@@ -14,6 +14,8 @@ URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
 
 TEMPO_VERIFICACAO = 45
 
+ARQUIVO_USUARIOS = "usuarios.json"
+
 usuarios = {}
 
 enviadas = []
@@ -21,11 +23,8 @@ enviadas = []
 ultimo_update = None
 
 # =========================================
-# BANCO LOCAL JSON
+# CARREGAR USUÁRIOS
 # =========================================
-
-ARQUIVO_USUARIOS = "usuarios.json"
-
 
 def carregar_usuarios():
 
@@ -33,7 +32,11 @@ def carregar_usuarios():
 
     try:
 
-        with open(ARQUIVO_USUARIOS, "r", encoding="utf-8") as f:
+        with open(
+            ARQUIVO_USUARIOS,
+            "r",
+            encoding="utf-8"
+        ) as f:
 
             usuarios = json.load(f)
 
@@ -41,24 +44,34 @@ def carregar_usuarios():
 
         usuarios = {}
 
+# =========================================
+# SALVAR USUÁRIOS
+# =========================================
 
 def salvar_usuarios():
 
-    with open(ARQUIVO_USUARIOS, "w", encoding="utf-8") as f:
+    with open(
+        ARQUIVO_USUARIOS,
+        "w",
+        encoding="utf-8"
+    ) as f:
 
-        json.dump(usuarios, f, indent=4)
-
-
-carregar_usuarios()
+        json.dump(
+            usuarios,
+            f,
+            indent=4
+        )
 
 # =========================================
-# TELEGRAM API
+# ENVIAR MENSAGEM
 # =========================================
-
 
 def enviar_mensagem(chat_id, texto):
 
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    url = (
+        f"https://api.telegram.org/bot"
+        f"{TOKEN}/sendMessage"
+    )
 
     dados = {
         "chat_id": chat_id,
@@ -79,9 +92,8 @@ def enviar_mensagem(chat_id, texto):
         print(erro)
 
 # =========================================
-# DISCURSO
+# DETECTAR DISCURSO
 # =========================================
-
 
 def eh_discurso(titulo):
 
@@ -105,32 +117,34 @@ def eh_discurso(titulo):
     return False
 
 # =========================================
-# CONFIG USUÁRIO PADRÃO
+# CRIAR USUÁRIO
 # =========================================
-
 
 def criar_usuario(chat_id):
 
     usuarios[str(chat_id)] = {
+
         "moedas": [
             "USD",
             "EUR",
             "GBP"
         ],
+
         "impactos": [
             "Medium",
             "High"
         ],
+
         "minutos": 5,
+
         "low_usd_discurso": True
     }
 
     salvar_usuarios()
 
 # =========================================
-# COMANDOS TELEGRAM
+# COMANDOS
 # =========================================
-
 
 def processar_comando(chat_id, texto):
 
@@ -171,14 +185,12 @@ COMANDOS:
         enviar_mensagem(chat_id, mensagem)
 
     # =====================================
-    # LISTAR MOEDAS
+    # LISTA
     # =====================================
 
     elif comando == "/list":
 
-        enviar_mensagem(
-            chat_id,
-            """
+        mensagem = """
 MOEDAS DISPONÍVEIS:
 
 USD
@@ -190,10 +202,11 @@ AUD
 CAD
 NZD
 """
-        )
+
+        enviar_mensagem(chat_id, mensagem)
 
     # =====================================
-    # ADICIONAR MOEDA
+    # ADD
     # =====================================
 
     elif comando == "/add":
@@ -211,7 +224,9 @@ NZD
 
         if moeda not in usuarios[chat_id]["moedas"]:
 
-            usuarios[chat_id]["moedas"].append(moeda)
+            usuarios[chat_id]["moedas"].append(
+                moeda
+            )
 
             salvar_usuarios()
 
@@ -221,7 +236,7 @@ NZD
             )
 
     # =====================================
-    # REMOVER MOEDA
+    # REMOVE
     # =====================================
 
     elif comando == "/remove":
@@ -239,7 +254,9 @@ NZD
 
         if moeda in usuarios[chat_id]["moedas"]:
 
-            usuarios[chat_id]["moedas"].remove(moeda)
+            usuarios[chat_id]["moedas"].remove(
+                moeda
+            )
 
             salvar_usuarios()
 
@@ -271,7 +288,8 @@ NZD
 
         enviar_mensagem(
             chat_id,
-            f"⏰ Tempo alterado para {minutos} minutos"
+            f"⏰ Tempo alterado para "
+            f"{minutos} minutos"
         )
 
     # =====================================
@@ -292,15 +310,20 @@ NZD
         impacto = partes[1].capitalize()
 
         if impacto == "High":
-            usuarios[chat_id]["impactos"] = ["High"]
+
+            usuarios[chat_id]["impactos"] = [
+                "High"
+            ]
 
         elif impacto == "Medium":
+
             usuarios[chat_id]["impactos"] = [
                 "Medium",
                 "High"
             ]
 
         elif impacto == "Low":
+
             usuarios[chat_id]["impactos"] = [
                 "Low",
                 "Medium",
@@ -311,7 +334,8 @@ NZD
 
         enviar_mensagem(
             chat_id,
-            f"🔥 Impactos alterados para: {usuarios[chat_id]['impactos']}"
+            f"🔥 Impactos: "
+            f"{usuarios[chat_id]['impactos']}"
         )
 
     # =====================================
@@ -338,28 +362,39 @@ NZD
 {config['low_usd_discurso']}
 """
 
-        enviar_mensagem(chat_id, mensagem)
+        enviar_mensagem(
+            chat_id,
+            mensagem
+        )
 
 # =========================================
-# PEGAR MENSAGENS TELEGRAM
+# PEGAR COMANDOS TELEGRAM
 # =========================================
-
 
 def verificar_comandos():
 
     global ultimo_update
 
-    url = f"https://api.telegram.org/bot{TOKEN}/getUpdates"
+    url = (
+        f"https://api.telegram.org/bot"
+        f"{TOKEN}/getUpdates"
+    )
 
     try:
 
-        resposta = requests.get(url).json()
+        resposta = requests.get(
+            url,
+            timeout=10
+        ).json()
 
         for update in resposta["result"]:
 
             update_id = update["update_id"]
 
-            if ultimo_update and update_id <= ultimo_update:
+            if (
+                ultimo_update
+                and update_id <= ultimo_update
+            ):
                 continue
 
             ultimo_update = update_id
@@ -375,7 +410,10 @@ def verificar_comandos():
 
             if texto.startswith("/"):
 
-                processar_comando(chat_id, texto)
+                processar_comando(
+                    chat_id,
+                    texto
+                )
 
     except Exception as erro:
 
@@ -383,9 +421,8 @@ def verificar_comandos():
         print(erro)
 
 # =========================================
-# NOTÍCIAS
+# VERIFICAR NOTÍCIAS
 # =========================================
-
 
 def verificar_noticias():
 
@@ -395,31 +432,34 @@ def verificar_noticias():
 
     try:
 
- resposta = requests.get(URL, timeout=10)
+        resposta = requests.get(
+            URL,
+            timeout=10
+        )
 
-if resposta.status_code != 200:
+        if resposta.status_code != 200:
 
-    print("Erro API:")
-    print(resposta.status_code)
+            print("Erro API:")
+            print(resposta.status_code)
 
-    return
+            return
 
-if not resposta.text.strip():
+        if not resposta.text.strip():
 
-    print("API retornou vazia")
+            print("API retornou vazia")
 
-    return
+            return
 
-try:
+        try:
 
-    noticias = resposta.json()
+            noticias = resposta.json()
 
-except Exception as erro:
+        except Exception as erro:
 
-    print("Erro ao converter JSON:")
-    print(erro)
+            print("Erro ao converter JSON:")
+            print(erro)
 
-    return
+            return
 
         agora = datetime.now().astimezone()
 
@@ -433,7 +473,9 @@ except Exception as erro:
 
             data_noticia = noticia.get("date")
 
-            horario = datetime.fromisoformat(data_noticia)
+            horario = datetime.fromisoformat(
+                data_noticia
+            )
 
             discurso = eh_discurso(titulo)
 
@@ -442,7 +484,9 @@ except Exception as erro:
                 if moeda not in config["moedas"]:
                     continue
 
-                permitido = impacto in config["impactos"]
+                permitido = (
+                    impacto in config["impactos"]
+                )
 
                 if (
                     impacto == "Low"
@@ -459,14 +503,22 @@ except Exception as erro:
                     horario - agora
                 ).total_seconds() / 60
 
-                chave = f"{chat_id}-{titulo}-{data_noticia}"
+                chave = (
+                    f"{chat_id}-"
+                    f"{titulo}-"
+                    f"{data_noticia}"
+                )
 
                 if (
                     0 <= diferenca <= config["minutos"]
                     and chave not in enviadas
                 ):
 
-                    tipo = "🗣️ Discurso" if discurso else "📊 Indicador"
+                    tipo = (
+                        "🗣️ Discurso"
+                        if discurso
+                        else "📊 Indicador"
+                    )
 
                     mensagem = f"""
 🚨 ALERTA ECONÔMICO
@@ -493,9 +545,15 @@ except Exception as erro:
 {round(diferenca)} minutos
 """
 
-                    enviar_mensagem(chat_id, mensagem)
+                    enviar_mensagem(
+                        chat_id,
+                        mensagem
+                    )
 
-                    print(f"Mensagem enviada para {chat_id}")
+                    print(
+                        f"Mensagem enviada "
+                        f"para {chat_id}"
+                    )
 
                     enviadas.append(chave)
 
@@ -507,10 +565,14 @@ except Exception as erro:
         print(erro)
 
 # =========================================
-# LOOP
+# INICIAR
 # =========================================
 
-schedule.every(TEMPO_VERIFICACAO).seconds.do(
+carregar_usuarios()
+
+schedule.every(
+    TEMPO_VERIFICACAO
+).seconds.do(
     verificar_noticias
 )
 
