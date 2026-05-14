@@ -2,9 +2,7 @@ import requests
 import schedule
 import time
 import json
-import signal
-import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 TOKEN = "8970558916:AAHqPrQ84zE-C_w7Ih_DfF_BWbuXfh2FdCM"
 
@@ -18,7 +16,8 @@ ARQUIVO_ENVIADAS = "enviadas.json"
 usuarios = {}
 enviadas = []
 ultimo_update = None
-primeira_verificacao = True
+
+HORARIO_INICIO_BOT = datetime.now().astimezone()
 
 MOEDAS_VALIDAS = [
     "USD", "EUR", "GBP", "JPY",
@@ -75,16 +74,6 @@ def avisar_todos(texto):
     for chat_id in usuarios.keys():
         enviar_mensagem(chat_id, texto)
         time.sleep(0.5)
-
-
-def desligar_bot(signal_received=None, frame=None):
-    avisar_todos("🔴 BOT FORA DE AR")
-    print("BOT FORA DE AR")
-    sys.exit(0)
-
-
-signal.signal(signal.SIGINT, desligar_bot)
-signal.signal(signal.SIGTERM, desligar_bot)
 
 
 def eh_discurso(titulo):
@@ -297,7 +286,6 @@ def verificar_comandos():
 
 def verificar_noticias():
     global enviadas
-    global primeira_verificacao
 
     print("Verificando notícias...")
 
@@ -338,6 +326,16 @@ def verificar_noticias():
                 if impacto not in config["impactos"]:
                     continue
 
+                minutos_usuario = config["minutos"]
+
+                horario_alerta = horario - timedelta(minutes=minutos_usuario)
+
+                # BLOQUEIO PRINCIPAL:
+                # Se o horário correto do alerta já passou antes do bot ligar,
+                # o bot NÃO envia essa notícia.
+                if horario_alerta < HORARIO_INICIO_BOT:
+                    continue
+
                 diferenca = (horario - agora).total_seconds() / 60
 
                 chave = f"{chat_id}-{titulo}-{data_noticia}"
@@ -345,13 +343,7 @@ def verificar_noticias():
                 if chave in enviadas:
                     continue
 
-                if 0 <= diferenca <= config["minutos"]:
-
-                    if primeira_verificacao:
-                        enviadas.append(chave)
-                        salvar_enviadas()
-                        continue
-
+                if 0 <= diferenca <= minutos_usuario:
                     tipo = "🗣️ Discurso" if discurso else "📊 Indicador"
 
                     mensagem = f"""
@@ -393,10 +385,6 @@ def verificar_noticias():
 
                     time.sleep(1)
 
-        if primeira_verificacao:
-            primeira_verificacao = False
-            print("Primeira verificação concluída sem enviar alertas antigos.")
-
     except Exception as erro:
         print("Erro notícias:")
         print(erro)
@@ -407,30 +395,11 @@ carregar_enviadas()
 
 avisar_todos("✅ BOT FUNCIONANDO")
 
-schedule.every(TEMPO_VERIFICACAO).seconds.do(
-    verificar_noticias
-)
-
-schedule.every(5).seconds.do(
-    verificar_comandos
-)
+schedule.every(TEMPO_VERIFICACAO).seconds.do(verificar_noticias)
+schedule.every(5).seconds.do(verificar_comandos)
 
 print("BOT INICIADO")
 
-# =========================================
-# ESPERA PRIMEIRO CICLO
-# =========================================
-
-print(
-    f"Aguardando "
-    f"{TEMPO_VERIFICACAO}s "
-    f"para iniciar verificações..."
-)
-
-time.sleep(TEMPO_VERIFICACAO)
-
 while True:
-
     schedule.run_pending()
-
     time.sleep(0.5)
