@@ -1,0 +1,28 @@
+{
+    "6225328267": {
+        "moedas": [
+            "USD",
+            "EUR",
+            "GBP",
+            "JPY"
+        ],
+        "impactos": [
+            "High"
+        ],
+        "minutos": 3,
+        "low_usd_discurso": true
+    },
+    "1070548901": {
+        "moedas": [
+            "USD",
+            "EUR",
+            "GBP"
+        ],
+        "impactos": [
+            "Medium",
+            "High"
+        ],
+        "minutos": 5,
+        "low_usd_discurso": true
+    }
+}
