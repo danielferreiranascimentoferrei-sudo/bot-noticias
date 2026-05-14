@@ -12,7 +12,7 @@ TOKEN = "8970558916:AAHqPrQ84zE-C_w7Ih_DfF_BWbuXfh2FdCM"
 
 URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
 
-TEMPO_VERIFICACAO = 15
+TEMPO_VERIFICACAO = 45
 
 usuarios = {}
 
@@ -395,9 +395,31 @@ def verificar_noticias():
 
     try:
 
-        resposta = requests.get(URL)
+ resposta = requests.get(URL, timeout=10)
 
-        noticias = resposta.json()
+if resposta.status_code != 200:
+
+    print("Erro API:")
+    print(resposta.status_code)
+
+    return
+
+if not resposta.text.strip():
+
+    print("API retornou vazia")
+
+    return
+
+try:
+
+    noticias = resposta.json()
+
+except Exception as erro:
+
+    print("Erro ao converter JSON:")
+    print(erro)
+
+    return
 
         agora = datetime.now().astimezone()
 
