@@ -9,7 +9,7 @@ TOKEN = "8970558916:AAHqPrQ84zE-C_w7Ih_DfF_BWbuXfh2FdCM"
 
 URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
 
-TEMPO_VERIFICACAO = 60
+TEMPO_VERIFICACAO = 300
 
 ARQUIVO_USUARIOS = "usuarios.json"
 ARQUIVO_ENVIADAS = "enviadas.json"
