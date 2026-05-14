@@ -3,11 +3,13 @@ import schedule
 import time
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
-TOKEN = "8970558916:AAHqPrQ84zE-C_w7Ih_DfF_BWbuXfh2FdCM"
+TOKEN = "SEU_TOKEN_AQUI"
 
 URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
-TEMPO_VERIFICACAO = 45
+
+TEMPO_VERIFICACAO = 60
 
 ARQUIVO_USUARIOS = "usuarios.json"
 ARQUIVO_ENVIADAS = "enviadas.json"
@@ -15,6 +17,8 @@ ARQUIVO_ENVIADAS = "enviadas.json"
 usuarios = {}
 enviadas = []
 ultimo_update = None
+
+FUSO_BRASIL = ZoneInfo("America/Sao_Paulo")
 
 MOEDAS_VALIDAS = ["USD", "EUR", "GBP", "JPY", "BRL", "AUD", "CAD", "NZD"]
 
@@ -325,7 +329,7 @@ def verificar_noticias():
             print(erro)
             return
 
-        agora = datetime.now().astimezone()
+        agora = datetime.now(FUSO_BRASIL)
 
         for noticia in noticias:
             moeda = noticia.get("country")
@@ -334,6 +338,8 @@ def verificar_noticias():
             data_noticia = noticia.get("date")
 
             horario = datetime.fromisoformat(data_noticia)
+            horario = horario.astimezone(FUSO_BRASIL)
+
             discurso = eh_discurso(titulo)
 
             for chat_id, config in usuarios.items():
@@ -375,7 +381,7 @@ def verificar_noticias():
 📅 DATA
 {horario.strftime('%d/%m/%Y')}
 
-⏰ HORÁRIO
+⏰ HORÁRIO BRASÍLIA
 {horario.strftime('%H:%M')}
 
 ⌛ FALTA
