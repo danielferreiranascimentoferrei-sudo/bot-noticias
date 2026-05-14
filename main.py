@@ -259,14 +259,19 @@ def verificar_comandos():
     url = f"https://api.telegram.org/bot{TOKEN}/getUpdates"
 
     try:
-        resposta = requests.get(url, timeout=10).json()
+        params = {}
+
+        if ultimo_update is not None:
+            params["offset"] = ultimo_update + 1
+
+        resposta = requests.get(
+            url,
+            params=params,
+            timeout=10
+        ).json()
 
         for update in resposta["result"]:
             update_id = update["update_id"]
-
-            if ultimo_update and update_id <= ultimo_update:
-                continue
-
             ultimo_update = update_id
 
             if "message" not in update:
@@ -390,8 +395,19 @@ def verificar_noticias():
         print(erro)
 
 
-carregar_usuarios()
-carregar_enviadas()
+# LIMPAR MENSAGENS ANTIGAS DO TELEGRAM
+try:
+    url_updates = f"https://api.telegram.org/bot{TOKEN}/getUpdates"
+    resposta_updates = requests.get(url_updates, timeout=10).json()
+
+    if resposta_updates["result"]:
+        ultimo_update = resposta_updates["result"][-1]["update_id"]
+
+    print("Mensagens antigas ignoradas.")
+
+except Exception as erro:
+    print("Erro ao limpar mensagens antigas:")
+    print(erro)
 
 avisar_todos("✅ BOT FUNCIONANDO")
 
