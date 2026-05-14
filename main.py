@@ -2,6 +2,8 @@ import requests
 import schedule
 import time
 import json
+import signal
+import sys
 from datetime import datetime
 
 TOKEN = "8970558916:AAHqPrQ84zE-C_w7Ih_DfF_BWbuXfh2FdCM"
@@ -11,26 +13,20 @@ URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
 TEMPO_VERIFICACAO = 45
 
 ARQUIVO_USUARIOS = "usuarios.json"
+ARQUIVO_ENVIADAS = "enviadas.json"
 
 usuarios = {}
 enviadas = []
 ultimo_update = None
 
 MOEDAS_VALIDAS = [
-    "USD",
-    "EUR",
-    "GBP",
-    "JPY",
-    "BRL",
-    "AUD",
-    "CAD",
-    "NZD"
+    "USD", "EUR", "GBP", "JPY",
+    "BRL", "AUD", "CAD", "NZD"
 ]
 
 
 def carregar_usuarios():
     global usuarios
-
     try:
         with open(ARQUIVO_USUARIOS, "r", encoding="utf-8") as f:
             usuarios = json.load(f)
@@ -41,6 +37,20 @@ def carregar_usuarios():
 def salvar_usuarios():
     with open(ARQUIVO_USUARIOS, "w", encoding="utf-8") as f:
         json.dump(usuarios, f, indent=4)
+
+
+def carregar_enviadas():
+    global enviadas
+    try:
+        with open(ARQUIVO_ENVIADAS, "r", encoding="utf-8") as f:
+            enviadas = json.load(f)
+    except:
+        enviadas = []
+
+
+def salvar_enviadas():
+    with open(ARQUIVO_ENVIADAS, "w", encoding="utf-8") as f:
+        json.dump(enviadas, f, indent=4)
 
 
 def enviar_mensagem(chat_id, texto):
@@ -58,15 +68,26 @@ def enviar_mensagem(chat_id, texto):
         print(erro)
 
 
+def avisar_todos(texto):
+    for chat_id in usuarios.keys():
+        enviar_mensagem(chat_id, texto)
+        time.sleep(0.5)
+
+
+def desligar_bot(signal_received=None, frame=None):
+    avisar_todos("🔴 BOT FORA DE AR")
+    print("BOT FORA DE AR")
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, desligar_bot)
+signal.signal(signal.SIGTERM, desligar_bot)
+
+
 def eh_discurso(titulo):
     palavras = [
-        "speech",
-        "speaks",
-        "statement",
-        "testimony",
-        "conference",
-        "press",
-        "fomc"
+        "speech", "speaks", "statement",
+        "testimony", "conference", "press", "fomc"
     ]
 
     titulo = titulo.lower()
@@ -153,34 +174,13 @@ def processar_comando(chat_id, texto):
         moeda = partes[1].upper()
 
         if moeda not in MOEDAS_VALIDAS:
-            enviar_mensagem(
-                chat_id,
-                f"""
-❌ MOEDA INVÁLIDA
-
-Moeda digitada:
-{moeda}
-
-Use /list para ver as disponíveis.
-"""
-            )
+            enviar_mensagem(chat_id, f"❌ Moeda inválida: {moeda}\nUse /list")
             return
 
         if moeda not in usuarios[chat_id]["moedas"]:
             usuarios[chat_id]["moedas"].append(moeda)
             salvar_usuarios()
-
-            enviar_mensagem(
-                chat_id,
-                f"""
-✅ MOEDA ADICIONADA
-
-💱 {moeda}
-
-Agora você receberá
-notícias desta moeda.
-"""
-            )
+            enviar_mensagem(chat_id, f"✅ {moeda} adicionada")
         else:
             enviar_mensagem(chat_id, f"⚠️ {moeda} já está ativa.")
 
@@ -194,18 +194,7 @@ notícias desta moeda.
         if moeda in usuarios[chat_id]["moedas"]:
             usuarios[chat_id]["moedas"].remove(moeda)
             salvar_usuarios()
-
-            enviar_mensagem(
-                chat_id,
-                f"""
-❌ MOEDA REMOVIDA
-
-💱 {moeda}
-
-Você não receberá mais
-alertas desta moeda.
-"""
-            )
+            enviar_mensagem(chat_id, f"❌ {moeda} removida")
         else:
             enviar_mensagem(chat_id, f"⚠️ {moeda} não está ativa.")
 
@@ -222,86 +211,35 @@ alertas desta moeda.
 
         usuarios[chat_id]["minutos"] = minutos
         salvar_usuarios()
-
-        enviar_mensagem(
-            chat_id,
-            f"""
-⏰ TEMPO ALTERADO
-
-Novo alerta:
-{minutos} minutos antes.
-"""
-        )
+        enviar_mensagem(chat_id, f"⏰ Tempo alterado para {minutos} minutos antes.")
 
     elif comando == "/impact":
         if len(partes) < 2:
-            enviar_mensagem(
-                chat_id,
-                """
-❌ Use:
-
-/impact high
-/impact medium
-/impact low
-/impact mediumhigh
-/impact all
-"""
-            )
+            enviar_mensagem(chat_id, "❌ Use:\n/impact high\n/impact medium\n/impact low\n/impact mediumhigh\n/impact all")
             return
 
         impacto = partes[1].lower()
 
         if impacto == "high":
             usuarios[chat_id]["impactos"] = ["High"]
-
         elif impacto == "medium":
             usuarios[chat_id]["impactos"] = ["Medium"]
-
         elif impacto == "low":
             usuarios[chat_id]["impactos"] = ["Low"]
-
         elif impacto == "mediumhigh":
             usuarios[chat_id]["impactos"] = ["Medium", "High"]
-
         elif impacto == "all":
             usuarios[chat_id]["impactos"] = ["Low", "Medium", "High"]
-
         else:
-            enviar_mensagem(
-                chat_id,
-                """
-❌ IMPACTO INVÁLIDO
-
-Use:
-
-/impact high
-/impact medium
-/impact low
-/impact mediumhigh
-/impact all
-"""
-            )
+            enviar_mensagem(chat_id, "❌ Impacto inválido.")
             return
 
         salvar_usuarios()
-
         impactos = ", ".join(usuarios[chat_id]["impactos"])
-
-        enviar_mensagem(
-            chat_id,
-            f"""
-🔥 IMPACTOS ATUALIZADOS
-
-Ativos:
-{impactos}
-"""
-        )
+        enviar_mensagem(chat_id, f"🔥 Impactos ativos:\n{impactos}")
 
     elif comando == "/status":
         config = usuarios[chat_id]
-
-        moedas = ", ".join(config["moedas"])
-        impactos = ", ".join(config["impactos"])
 
         mensagem = f"""
 ╔══════════════════╗
@@ -309,14 +247,10 @@ Ativos:
 ╚══════════════════╝
 
 💱 MOEDAS
-{moedas}
-
-━━━━━━━━━━━━━━━━━━
+{', '.join(config['moedas'])}
 
 🔥 IMPACTOS
-{impactos}
-
-━━━━━━━━━━━━━━━━━━
+{', '.join(config['impactos'])}
 
 ⏰ ALERTA
 {config['minutos']} min antes
@@ -388,7 +322,6 @@ def verificar_noticias():
             data_noticia = noticia.get("date")
 
             horario = datetime.fromisoformat(data_noticia)
-
             discurso = eh_discurso(titulo)
 
             for chat_id, config in usuarios.items():
@@ -402,7 +335,10 @@ def verificar_noticias():
 
                 chave = f"{chat_id}-{titulo}-{data_noticia}"
 
-                if 0 <= diferenca <= config["minutos"] and chave not in enviadas:
+                if chave in enviadas:
+                    continue
+
+                if 0 <= diferenca <= config["minutos"]:
                     tipo = "🗣️ Discurso" if discurso else "📊 Indicador"
 
                     mensagem = f"""
@@ -440,6 +376,7 @@ def verificar_noticias():
                     print(f"Mensagem enviada para {chat_id}")
 
                     enviadas.append(chave)
+                    salvar_enviadas()
 
                     time.sleep(1)
 
@@ -449,6 +386,9 @@ def verificar_noticias():
 
 
 carregar_usuarios()
+carregar_enviadas()
+
+avisar_todos("✅ BOT FUNCIONANDO")
 
 schedule.every(TEMPO_VERIFICACAO).seconds.do(verificar_noticias)
 schedule.every(5).seconds.do(verificar_comandos)
