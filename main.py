@@ -23,6 +23,21 @@ enviadas = []
 ultimo_update = None
 
 # =========================================
+# MOEDAS VÁLIDAS
+# =========================================
+
+MOEDAS_VALIDAS = [
+    "USD",
+    "EUR",
+    "GBP",
+    "JPY",
+    "BRL",
+    "AUD",
+    "CAD",
+    "NZD"
+]
+
+# =========================================
 # CARREGAR USUÁRIOS
 # =========================================
 
@@ -131,7 +146,6 @@ def criar_usuario(chat_id):
         ],
 
         "impactos": [
-            "Medium",
             "High"
         ],
 
@@ -164,22 +178,32 @@ def processar_comando(chat_id, texto):
     if comando == "/start":
 
         mensagem = """
-🤖 BOT DE NOTÍCIAS ECONÔMICAS
+╔══════════════════╗
+      📊 BOT ECONÔMICO
+╚══════════════════╝
 
-COMANDOS:
+🚨 ALERTAS AUTOMÁTICOS
+⏰ Notícias em tempo real
+🔥 Filtro por impacto
+💱 Filtro por moedas
 
-/add USD
-/remove USD
+━━━━━━━━━━━━━━━━━━
 
-/impact high
-/impact medium
-/impact low
+📌 COMANDOS
 
-/time 5
+➕ /add USD
+➖ /remove USD
 
-/status
+🔥 /impact high
+🔥 /impact medium
+🔥 /impact low
+🔥 /impact mediumhigh
+🔥 /impact all
 
-/list
+⏰ /time 5
+
+📊 /status
+📋 /list
 """
 
         enviar_mensagem(chat_id, mensagem)
@@ -191,16 +215,18 @@ COMANDOS:
     elif comando == "/list":
 
         mensagem = """
-MOEDAS DISPONÍVEIS:
+╔══════════════════╗
+       💱 MOEDAS
+╚══════════════════╝
 
-USD
-EUR
-GBP
-JPY
-BRL
-AUD
-CAD
-NZD
+🇺🇸 USD
+🇪🇺 EUR
+🇬🇧 GBP
+🇯🇵 JPY
+🇧🇷 BRL
+🇦🇺 AUD
+🇨🇦 CAD
+🇳🇿 NZD
 """
 
         enviar_mensagem(chat_id, mensagem)
@@ -215,12 +241,28 @@ NZD
 
             enviar_mensagem(
                 chat_id,
-                "Use: /add USD"
+                "❌ Use:\n/add USD"
             )
 
             return
 
         moeda = partes[1].upper()
+
+        if moeda not in MOEDAS_VALIDAS:
+
+            enviar_mensagem(
+                chat_id,
+                f"""
+❌ MOEDA INVÁLIDA
+
+Moeda digitada:
+{moeda}
+
+Use /list para ver as disponíveis.
+"""
+            )
+
+            return
 
         if moeda not in usuarios[chat_id]["moedas"]:
 
@@ -232,7 +274,21 @@ NZD
 
             enviar_mensagem(
                 chat_id,
-                f"✅ {moeda} adicionada"
+                f"""
+✅ MOEDA ADICIONADA
+
+💱 {moeda}
+
+Agora você receberá
+notícias desta moeda.
+"""
+            )
+
+        else:
+
+            enviar_mensagem(
+                chat_id,
+                f"⚠️ {moeda} já está ativa."
             )
 
     # =====================================
@@ -245,7 +301,7 @@ NZD
 
             enviar_mensagem(
                 chat_id,
-                "Use: /remove USD"
+                "❌ Use:\n/remove USD"
             )
 
             return
@@ -262,11 +318,25 @@ NZD
 
             enviar_mensagem(
                 chat_id,
-                f"❌ {moeda} removida"
+                f"""
+❌ MOEDA REMOVIDA
+
+💱 {moeda}
+
+Você não receberá mais
+alertas desta moeda.
+"""
+            )
+
+        else:
+
+            enviar_mensagem(
+                chat_id,
+                f"⚠️ {moeda} não está ativa."
             )
 
     # =====================================
-    # TEMPO
+    # TIME
     # =====================================
 
     elif comando == "/time":
@@ -275,7 +345,7 @@ NZD
 
             enviar_mensagem(
                 chat_id,
-                "Use: /time 5"
+                "❌ Use:\n/time 5"
             )
 
             return
@@ -288,12 +358,16 @@ NZD
 
         enviar_mensagem(
             chat_id,
-            f"⏰ Tempo alterado para "
-            f"{minutos} minutos"
+            f"""
+⏰ TEMPO ALTERADO
+
+Novo alerta:
+{minutos} minutos antes.
+"""
         )
 
     # =====================================
-    # IMPACTO
+    # IMPACT
     # =====================================
 
     elif comando == "/impact":
@@ -302,27 +376,47 @@ NZD
 
             enviar_mensagem(
                 chat_id,
-                "Use: /impact high"
+                """
+❌ Use:
+
+/impact high
+/impact medium
+/impact low
+/impact mediumhigh
+/impact all
+"""
             )
 
             return
 
-        impacto = partes[1].capitalize()
+        impacto = partes[1].lower()
 
-        if impacto == "High":
+        if impacto == "high":
 
             usuarios[chat_id]["impactos"] = [
                 "High"
             ]
 
-        elif impacto == "Medium":
+        elif impacto == "medium":
+
+            usuarios[chat_id]["impactos"] = [
+                "Medium"
+            ]
+
+        elif impacto == "low":
+
+            usuarios[chat_id]["impactos"] = [
+                "Low"
+            ]
+
+        elif impacto == "mediumhigh":
 
             usuarios[chat_id]["impactos"] = [
                 "Medium",
                 "High"
             ]
 
-        elif impacto == "Low":
+        elif impacto == "all":
 
             usuarios[chat_id]["impactos"] = [
                 "Low",
@@ -330,12 +424,39 @@ NZD
                 "High"
             ]
 
+        else:
+
+            enviar_mensagem(
+                chat_id,
+                """
+❌ IMPACTO INVÁLIDO
+
+Use:
+
+high
+medium
+low
+mediumhigh
+all
+"""
+            )
+
+            return
+
         salvar_usuarios()
+
+        impactos = ", ".join(
+            usuarios[chat_id]["impactos"]
+        )
 
         enviar_mensagem(
             chat_id,
-            f"🔥 Impactos: "
-            f"{usuarios[chat_id]['impactos']}"
+            f"""
+🔥 IMPACTOS ATUALIZADOS
+
+Ativos:
+{impactos}
+"""
         )
 
     # =====================================
@@ -346,20 +467,31 @@ NZD
 
         config = usuarios[chat_id]
 
+        moedas = ", ".join(
+            config["moedas"]
+        )
+
+        impactos = ", ".join(
+            config["impactos"]
+        )
+
         mensagem = f"""
-📊 SUAS CONFIGURAÇÕES
+╔══════════════════╗
+      📊 STATUS
+╚══════════════════╝
 
-💱 Moedas:
-{', '.join(config['moedas'])}
+💱 MOEDAS
+{moedas}
 
-🔥 Impactos:
-{', '.join(config['impactos'])}
+━━━━━━━━━━━━━━━━━━
 
-⏰ Aviso:
-{config['minutos']} minutos antes
+🔥 IMPACTOS
+{impactos}
 
-🗣️ Low USD discurso:
-{config['low_usd_discurso']}
+━━━━━━━━━━━━━━━━━━
+
+⏰ ALERTA
+{config['minutos']} min antes
 """
 
         enviar_mensagem(
@@ -521,28 +653,33 @@ def verificar_noticias():
                     )
 
                     mensagem = f"""
-🚨 ALERTA ECONÔMICO
+╔══════════════════╗
+   🚨 ALERTA ECONÔMICO
+╚══════════════════╝
 
-💱 Moeda:
+💱 ATIVO
 {moeda}
 
-📌 Tipo:
+📌 TIPO
 {tipo}
 
-📰 Evento:
+📰 EVENTO
 {titulo}
 
-🔥 Impacto:
+🔥 IMPACTO
 {impacto}
 
-📅 Data:
+📅 DATA
 {horario.strftime('%d/%m/%Y')}
 
-⏰ Horário:
+⏰ HORÁRIO
 {horario.strftime('%H:%M')}
 
-⌛ Começa em:
+⌛ FALTA
 {round(diferenca)} minutos
+
+━━━━━━━━━━━━━━━━━━
+⚠️ Prepare-se antes da notícia.
 """
 
                     enviar_mensagem(
