@@ -2,12 +2,11 @@ import requests
 import schedule
 import time
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 
 TOKEN = "8970558916:AAHqPrQ84zE-C_w7Ih_DfF_BWbuXfh2FdCM"
 
 URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
-
 TEMPO_VERIFICACAO = 45
 
 ARQUIVO_USUARIOS = "usuarios.json"
@@ -17,17 +16,11 @@ usuarios = {}
 enviadas = []
 ultimo_update = None
 
-HORARIO_INICIO_BOT = datetime.now().astimezone()
-
-MOEDAS_VALIDAS = [
-    "USD", "EUR", "GBP", "JPY",
-    "BRL", "AUD", "CAD", "NZD"
-]
+MOEDAS_VALIDAS = ["USD", "EUR", "GBP", "JPY", "BRL", "AUD", "CAD", "NZD"]
 
 
 def carregar_usuarios():
     global usuarios
-
     try:
         with open(ARQUIVO_USUARIOS, "r", encoding="utf-8") as f:
             usuarios = json.load(f)
@@ -42,7 +35,6 @@ def salvar_usuarios():
 
 def carregar_enviadas():
     global enviadas
-
     try:
         with open(ARQUIVO_ENVIADAS, "r", encoding="utf-8") as f:
             enviadas = json.load(f)
@@ -78,8 +70,13 @@ def avisar_todos(texto):
 
 def eh_discurso(titulo):
     palavras = [
-        "speech", "speaks", "statement",
-        "testimony", "conference", "press", "fomc"
+        "speech",
+        "speaks",
+        "statement",
+        "testimony",
+        "conference",
+        "press",
+        "fomc"
     ]
 
     titulo = titulo.lower()
@@ -203,6 +200,7 @@ def processar_comando(chat_id, texto):
 
         usuarios[chat_id]["minutos"] = minutos
         salvar_usuarios()
+
         enviar_mensagem(chat_id, f"⏰ Tempo alterado para {minutos} minutos antes.")
 
     elif comando == "/impact":
@@ -230,6 +228,7 @@ def processar_comando(chat_id, texto):
             return
 
         salvar_usuarios()
+
         impactos = ", ".join(usuarios[chat_id]["impactos"])
         enviar_mensagem(chat_id, f"🔥 Impactos ativos:\n{impactos}")
 
@@ -253,6 +252,23 @@ def processar_comando(chat_id, texto):
         enviar_mensagem(chat_id, mensagem)
 
 
+def limpar_updates_antigos():
+    global ultimo_update
+
+    try:
+        url = f"https://api.telegram.org/bot{TOKEN}/getUpdates"
+        resposta = requests.get(url, timeout=10).json()
+
+        if resposta["result"]:
+            ultimo_update = resposta["result"][-1]["update_id"]
+
+        print("Mensagens antigas ignoradas.")
+
+    except Exception as erro:
+        print("Erro ao limpar mensagens antigas:")
+        print(erro)
+
+
 def verificar_comandos():
     global ultimo_update
 
@@ -264,11 +280,7 @@ def verificar_comandos():
         if ultimo_update is not None:
             params["offset"] = ultimo_update + 1
 
-        resposta = requests.get(
-            url,
-            params=params,
-            timeout=10
-        ).json()
+        resposta = requests.get(url, params=params, timeout=10).json()
 
         for update in resposta["result"]:
             update_id = update["update_id"]
@@ -333,14 +345,6 @@ def verificar_noticias():
 
                 minutos_usuario = config["minutos"]
 
-                horario_alerta = horario - timedelta(minutes=minutos_usuario)
-
-                # BLOQUEIO PRINCIPAL:
-                # Se o horário correto do alerta já passou antes do bot ligar,
-                # o bot NÃO envia essa notícia.
-                if horario_alerta < HORARIO_INICIO_BOT:
-                    continue
-
                 diferenca = (horario - agora).total_seconds() / 60
 
                 chave = f"{chat_id}-{titulo}-{data_noticia}"
@@ -395,19 +399,9 @@ def verificar_noticias():
         print(erro)
 
 
-# LIMPAR MENSAGENS ANTIGAS DO TELEGRAM
-try:
-    url_updates = f"https://api.telegram.org/bot{TOKEN}/getUpdates"
-    resposta_updates = requests.get(url_updates, timeout=10).json()
-
-    if resposta_updates["result"]:
-        ultimo_update = resposta_updates["result"][-1]["update_id"]
-
-    print("Mensagens antigas ignoradas.")
-
-except Exception as erro:
-    print("Erro ao limpar mensagens antigas:")
-    print(erro)
+carregar_usuarios()
+carregar_enviadas()
+limpar_updates_antigos()
 
 avisar_todos("✅ BOT FUNCIONANDO")
 
